@@ -262,7 +262,7 @@ class COVID_dataset(Dataset):
 
 
 if __name__ == "__main__":
-    test_dataset = COVID_dataset('dev', None)
+    test_dataset = COVID_dataset('dev', [0])  # None
     for i in tqdm(range(len(test_dataset))):
         sample, label = test_dataset[i]
         print(sample.shape)

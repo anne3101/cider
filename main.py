@@ -26,8 +26,8 @@ def make_sample_weights(data_set):
     makes the weights for each of the classes
     '''
     data_set_index = data_set.data_index
-    num_pos = data_set_index['label'].value_counts(normalize=True)[1]
-    num_neg = data_set_index['label'].value_counts(normalize=True)[0]
+    num_pos = data_set_index['label'].value_counts(normalize=True)[1]  # all value counts 1 (positive)
+    num_neg = data_set_index['label'].value_counts(normalize=True)[0]  # all value counts for value 0 (negative)
 
     # norm_pos = num_pos/(num_pos + num_neg)
     # norm_neg = 1 - norm_pos
@@ -240,7 +240,7 @@ def main(args):
         # transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
     ])
     # Train and dev split
-    device = 'cuda'
+    device = 'cuda'  # 'cuda'
     print(args)
     train_dataset = COVID_dataset(
         dset='train',
@@ -275,12 +275,12 @@ def main(args):
     loader_train = DataLoader(train_dataset,
                             batch_size=batch_size,
                             shuffle=True,
-                            num_workers=4)
+                            num_workers=1)  # 4
 
     loader_dev = DataLoader(dev_dataset,
                             batch_size=batch_size if args.eval_type != 'maj_vote' else 1,
                             shuffle=True,
-                            num_workers=4)
+                            num_workers=1)  # 4
 
     # Model
     model = Conv_Model(
@@ -416,7 +416,7 @@ def parse_args():
     parser.add_argument('--sr', type=int, help='sample rate parameter', default=48000)
     # augmentation args
     parser.add_argument('--masking', type=bool, help='do we perform time and frequency masking or not?', default=False)
-    parser.add_argument('--pitch_shift',type=bool,help='perform a pitch shift provides the step size ot shift',default=False)
+    parser.add_argument('--pitch_shift',type=bool,help='perform a pitch shift provides the step size ot shift', default=False)
     parser.add_argument('--noise', type=bool, help='add gaussian noise to the specgram', default=False)
     # Sweep helpers
     parser.add_argument('--wsz_ds', type=str, help='Input as: window size:depth scale.', default="")

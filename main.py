@@ -240,7 +240,7 @@ def main(args):
         # transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
     ])
     # Train and dev split
-    device = 'cuda'  # 'cuda'
+    device = 'cuda'
     print(args)
     train_dataset = COVID_dataset(
         dset='train',
@@ -275,12 +275,12 @@ def main(args):
     loader_train = DataLoader(train_dataset,
                             batch_size=batch_size,
                             shuffle=True,
-                            num_workers=1)  # 4
+                            num_workers=4)
 
     loader_dev = DataLoader(dev_dataset,
                             batch_size=batch_size if args.eval_type != 'maj_vote' else 1,
                             shuffle=True,
-                            num_workers=1)  # 4
+                            num_workers=4)
 
     # Model
     model = Conv_Model(

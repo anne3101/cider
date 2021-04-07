@@ -8,7 +8,7 @@
     "sr": 24000,
     "logger": "default",
     "save_model_topk": 3,
-    "do_train": true,
+    "do_train": false,
     "do_eval": true,
     "eval_type": "maj_vote",
     "task": "task1",

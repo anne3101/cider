@@ -15,8 +15,9 @@
     "noise": true,
     "masking": true,
     "pitch_shift": true,
-    "cross_val": true,
+    "cross_val": false,
     "location": "bitbucket",
-    "saved_model_dir": "",
+    "saved_model_dir": "models/run_2/task1_AUC-64.398/",
+    "saved_args_dir": "models/run_2/",
     "breathcough": true
 }

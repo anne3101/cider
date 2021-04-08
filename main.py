@@ -154,6 +154,13 @@ def run_eval(epoch, loader_test, model, device, weight, args, do_save_model=True
         plt.ylabel('True Positive Rate')
         plt.title('Receiver operating characteristic example')
         plt.legend(loc="lower right")
+        
+        # save roc-auc plot
+        existing = glob.glob(args.saved_model_dir + 'evaluation_*')
+        idxs = [int(re.search(r"(?<=_)[0-9]+$", s).group(0)) for s in existing]
+        ext = max(idxs) + 1 if idxs else 1
+        path_to_save = args.saved_model_dir + 'evaluation' + str(ext) + '.png'
+        plt.savefig(path_to_save)
 
         loader_test.set_description((f'epoch: {epoch + 1}; test f1: {score:.5f}; test AUC {roc_auc:.5f}'
                                         f'test loss: {sum(losses)/len(losses):.3f}'))
@@ -162,7 +169,7 @@ def run_eval(epoch, loader_test, model, device, weight, args, do_save_model=True
                         "epoch": epoch, "Test acc": acc, "test AUC": roc_auc,
                         "ROC": wandb.Image(plt), "UAR": recall,
                         "FPR": fpr, "TPR": tpr}
-        # print(outputs)
+        print(outputs)
 
         if args.logger == 'wandb':
             wandb.log(outputs)
@@ -286,7 +293,7 @@ def main(args):
     model = Conv_Model(
         dropout=args.dropout,
         depth_scale=args.depth_scale,
-        input_shape=(int(1024*args.nfft/2048)+1,int(94*args.wsz*args.sr/48000)),       # Dynamically adjusts for different input sizes
+        input_shape=(int(1024*args.nfft/2048)+1, int(94*args.wsz*args.sr/48000)),       # Dynamically adjusts for different input sizes
         device=device,
         breathcough=args.breathcough
     )
@@ -304,12 +311,14 @@ def main(args):
         wandb.watch(model)
 
     if args.do_train:
+        print("Starting training")
         for epoch in range(50):
             run_train(epoch, loader_train, model, device, optimizer, train_weight, args)
             run_eval(epoch, loader_dev, model, device, dev_weight, args)
 
-    # if args.do_eval and not args.do_train:
-    #     run_eval(0, loader_dev, model, device, dev_weight, args)
+    if args.do_eval and not args.do_train:
+        print("Starting evaluation")
+        run_eval(0, loader_dev, model, device, dev_weight, args)
 
     if args.folds['test']:
         # Recover best saved model
@@ -320,8 +329,8 @@ def main(args):
         # path = sorted(prevs, key=func)[-1]
         # with open(os.path.join(path, 'epoch.txt'), 'r') as f:
         #     best_epoch = int(f.readlines()[0])
-        best_epoch = 10 # TODO
-
+        best_epoch = 32 #10 # TODO
+        print("Starting testing")
         train_dataset = COVID_dataset(
             dset='train',
             folds=args.folds['train'] + args.folds['dev'],
@@ -427,8 +436,9 @@ def parse_args():
     parser.add_argument('--save_model_topk', type=int, help='Save the k best performing models according to validation F1.', default=3)
     parser.add_argument('--do_train', type=bool, help='Run training loop.', default=True)
     parser.add_argument('--do_eval', type=bool, help='Run eval loop.', default=True)
-    parser.add_argument('--eval_type', type=str, help='Type of eval to run', choices=['beginning', 'random','maj_vote'], default='maj_vote')
+    parser.add_argument('--eval_type', type=str, help='Type of eval to run', choices=['beginning', 'random', 'maj_vote'], default='maj_vote')
     parser.add_argument('--saved_model_dir', type=str, help='Path to dir containing saved model.', default="")
+    parser.add_argument('--saved_args_dir', type=str, help='Path to dir containing args of saved model', default="")  # args file is in another directory than model
     # What task to do
     parser.add_argument('--task', type=str, help='what task do you want to perform?', default='task1', choices=['all', 'task1', 'task2', 'task3'])
     parser.add_argument('--location', type=str, help='where is the data', default='bitbucket', choices=['bitbucket', 'hpc'])
@@ -453,7 +463,7 @@ def parse_args():
     # Other processing
     assert not (args.do_train and args.saved_model_dir), f"Can't run training and load saved model. Investigate!"
     if args.saved_model_dir:
-        saved_model_args_path = os.path.join(os.path.dirname(args.saved_model_dir), 'args.txt')
+        saved_model_args_path = os.path.join(os.path.dirname(args.saved_args_dir), 'args.txt')
         with open(saved_model_args_path, 'r') as f:
             saved_model_args = json.loads(f.read())
         # Combine current args with saved model params
@@ -484,7 +494,8 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-
+    print("train", args.do_train)
+    print("test", args.do_eval)
     torch.manual_seed(0)
     np.random.seed(0)
 
@@ -503,5 +514,8 @@ if __name__ == "__main__":
             main(args)
 
     else:
+        if args.logger == 'wandb':
+            run = wandb.init(project=args.task+'crossval_cough+breath_2', reinit=True)
+        args.folds = {'train': [1, 2], 'dev': [0], 'test': None}
         print(args)
         main(args)
